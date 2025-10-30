@@ -1,8 +1,5 @@
 import java.util.Arrays;
 
-/**
- * Тестовый класс для проверки функции перестановки битов.
- */
 public class BitPermutationTest {
     
     public static void main(String[] args) {
@@ -11,7 +8,6 @@ public class BitPermutationTest {
         int passed = 0;
         int failed = 0;
         
-        // Тест 1: Простая реверсия битов (MSB режим)
         try {
             byte[] data1 = {(byte) 0b11001010};
             int[] pBlock1 = {7, 6, 5, 4, 3, 2, 1, 0};
@@ -37,7 +33,6 @@ public class BitPermutationTest {
         }
         System.out.println();
         
-        // Тест 2: Простая реверсия битов (LSB режим)
         try {
             byte[] data2 = {(byte) 0b11001010};
             int[] pBlock2 = {7, 6, 5, 4, 3, 2, 1, 0};
@@ -63,7 +58,6 @@ public class BitPermutationTest {
         }
         System.out.println();
         
-        // Тест 3: Идентичное отображение
         try {
             byte[] data3 = {(byte) 0b10101010};
             int[] pBlock3 = {0, 1, 2, 3, 4, 5, 6, 7};
@@ -89,7 +83,6 @@ public class BitPermutationTest {
         }
         System.out.println();
         
-        // Тест 4: Перестановка двух байтов
         try {
             byte[] data4 = {(byte) 0b11110000, (byte) 0b00001111};
             int[] pBlock4 = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
@@ -115,10 +108,9 @@ public class BitPermutationTest {
         }
         System.out.println();
         
-        // Тест 5: Нумерация с 1 (не с 0)
         try {
             byte[] data5 = {(byte) 0b11001010};
-            int[] pBlock5 = {8, 7, 6, 5, 4, 3, 2, 1}; // Индексы начинаются с 1
+            int[] pBlock5 = {8, 7, 6, 5, 4, 3, 2, 1};
             byte[] expected5 = {(byte) 0b01010011};
             byte[] result5 = BitPermutation.permutateBits(
                 data5, pBlock5, BitIndexMode.INVERTED, false
@@ -141,10 +133,9 @@ public class BitPermutationTest {
         }
         System.out.println();
         
-        // Тест 6: Обработка ошибки (выход за границы)
         try {
             byte[] data6 = {(byte) 0b00001111};
-            int[] pBlock6 = {8, 9, 10}; // Индексы за пределами
+            int[] pBlock6 = {8, 9, 10};
             BitPermutation.permutateBits(data6, pBlock6, BitIndexMode.INVERTED, true);
             System.out.println("✗ Тест 6 (выход за границы): FAILED - ошибка не выброшена");
             failed++;
@@ -155,7 +146,6 @@ public class BitPermutationTest {
         }
         System.out.println();
         
-        // Итоговая статистика
         System.out.println("=== Результаты тестирования ===");
         System.out.printf("Пройдено: %d%n", passed);
         System.out.printf("Провалено: %d%n", failed);
@@ -166,9 +156,6 @@ public class BitPermutationTest {
         }
     }
     
-    /**
-     * Вспомогательная функция для красивого вывода байтов в двоичном формате.
-     */
     private static String toBinaryString(byte[] bytes) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < bytes.length; i++) {
@@ -179,4 +166,3 @@ public class BitPermutationTest {
         return sb.toString();
     }
 }
-
