@@ -15,24 +15,38 @@ cipher-framework (2-nd task)/
 │   ├── CipherMode.java         # Enum режимов шифрования
 │   ├── PaddingMode.java        # Enum режимов набивки
 │   ├── CipherContext.java      # Класс контекста шифрования
+│   ├── FeistelCipher.java      # Реализация сети Фейстеля
+│   ├── SimpleKeySchedule.java  # Простое расширение ключа
+│   ├── SimpleRoundFunction.java # Простая раунд-функция
 │   ├── DummyCipher.java        # Демо-реализация шифра
-│   └── Demo.java               # Примеры использования
+│   ├── Demo.java               # Примеры использования
+│   └── FeistelDemo.java        # Примеры сети Фейстеля
 ├── test/                       # Тесты
-│   └── CipherFrameworkTest.java
+│   ├── CipherFrameworkTest.java
+│   └── FeistelCipherTest.java
 ├── build.sh                    # Скрипт компиляции
 ├── run-tests.sh                # Запуск тестов
 ├── run-demo.sh                 # Запуск демонстрации
-└── README.md                   # Документация
+├── run-feistel-demo.sh         # Запуск демо Фейстеля
+└── run-feistel-tests.sh        # Запуск тестов Фейстеля
 ```
 
 ## Быстрый старт
 
 ```bash
-chmod +x build.sh run-tests.sh run-demo.sh
+# Сделать скрипты исполняемыми
+chmod +x *.sh
 
+# Компиляция
 ./build.sh
-./run-tests.sh
-./run-demo.sh
+
+# Запуск тестов
+./run-tests.sh          # Общие тесты (7 тестов)
+./run-feistel-tests.sh  # Тесты сети Фейстеля (6 тестов)
+
+# Запуск демонстраций
+./run-demo.sh           # Общая демонстрация
+./run-feistel-demo.sh   # Демонстрация сети Фейстеля
 ```
 
 ## Архитектура
@@ -85,6 +99,64 @@ public interface SymmetricCipher {
 - `setDecryptionKey` - установка ключа дешифрования
 - `encrypt` - шифрование блока
 - `decrypt` - дешифрование блока
+
+### 3.1. Класс FeistelCipher
+
+Реализация сети Фейстеля на базе интерфейсов `KeySchedule` и `RoundFunction`.
+
+```java
+public class FeistelCipher implements SymmetricCipher {
+    public FeistelCipher(KeySchedule keySchedule, RoundFunction roundFunction);
+}
+```
+
+**Параметры конструктора:**
+- `keySchedule` - реализация расширения ключа (интерфейс 1)
+- `roundFunction` - реализация раунд-функции (интерфейс 2)
+
+**Принцип работы сети Фейстеля:**
+
+1. **Шифрование:**
+   - Блок делится на две половины: L (левая) и R (правая)
+   - Для каждого раунда i:
+     - L_new = R_old
+     - R_new = L_old ⊕ F(R_old, RoundKey_i)
+   - После всех раундов: результат = R || L (половины меняются местами)
+
+2. **Дешифрование:**
+   - Аналогично шифрованию, но раундовые ключи применяются в обратном порядке
+
+**Особенности:**
+- ✅ Размер блока должен быть четным (для деления пополам)
+- ✅ Функция F не обязательно должна быть обратимой
+- ✅ Одна и та же структура для шифрования и дешифрования
+- ✅ Используется в DES, 3DES, Blowfish, Twofish и других алгоритмах
+
+**Пример использования:**
+
+```java
+KeySchedule keySchedule = new SimpleKeySchedule(8);  // 8 раундов
+RoundFunction roundFunc = new SimpleRoundFunction();
+FeistelCipher cipher = new FeistelCipher(keySchedule, roundFunc);
+
+byte[] key = {0x01, 0x02, 0x03, 0x04};
+cipher.setEncryptionKey(key);
+cipher.setDecryptionKey(key);
+
+byte[] plaintext = {0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x21, 0x21, 0x21};
+byte[] encrypted = cipher.encrypt(plaintext);
+byte[] decrypted = cipher.decrypt(encrypted);
+```
+
+**Демонстрационные классы:**
+- `SimpleKeySchedule` - простая реализация расширения ключа
+- `SimpleRoundFunction` - простая реализация раунд-функции
+
+**Запуск:**
+```bash
+./run-feistel-demo.sh    # Демонстрация
+./run-feistel-tests.sh   # 6 тестов
+```
 
 ### 4. Класс CipherContext
 

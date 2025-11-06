@@ -59,7 +59,8 @@ cd "bit-permutation (1-st task)"
 1. **KeySchedule** - интерфейс для расширения ключа (генерация раундовых ключей)
 2. **RoundFunction** - интерфейс для раунд-функции шифрования
 3. **SymmetricCipher** - интерфейс для симметричного алгоритма
-4. **CipherContext** - класс контекста с поддержкой:
+4. **FeistelCipher** - реализация сети Фейстеля (на базе интерфейсов 1 и 2)
+5. **CipherContext** - класс контекста с поддержкой:
    - **Режимов шифрования:** ECB, CBC, PCBC, CFB, OFB, CTR, Random Delta
    - **Режимов набивки:** Zeros, ANSI X.923, PKCS7, ISO 10126
    - **Асинхронных операций** (CompletableFuture)
@@ -70,8 +71,14 @@ cd "bit-permutation (1-st task)"
 ```bash
 cd "cipher-framework (2-nd task)"
 ./build.sh
+
+# Общие тесты и демо
 ./run-tests.sh    # 7 тестов
 ./run-demo.sh     # 4 примера
+
+# Сеть Фейстеля
+./run-feistel-tests.sh  # 6 тестов
+./run-feistel-demo.sh   # 3 примера
 ```
 
 **Особенности:**

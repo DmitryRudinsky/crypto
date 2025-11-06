@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "=== Запуск тестов ==="
+echo "=== Запуск тестов сети Фейстеля ==="
 echo ""
 
 if [ ! -d "out/test" ] || [ ! -d "out/production" ]; then
@@ -9,5 +9,5 @@ if [ ! -d "out/test" ] || [ ! -d "out/production" ]; then
     echo ""
 fi
 
-java -cp out/test:out/production CipherFrameworkTest
+java -cp out/test:out/production FeistelCipherTest
 

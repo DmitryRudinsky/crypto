@@ -1,13 +1,13 @@
 #!/bin/bash
 
-echo "=== Запуск тестов ==="
+echo "=== Запуск демонстрации сети Фейстеля ==="
 echo ""
 
-if [ ! -d "out/test" ] || [ ! -d "out/production" ]; then
+if [ ! -d "out/production" ]; then
     echo "Проект не скомпилирован. Запускаем компиляцию..."
     ./build.sh
     echo ""
 fi
 
-java -cp out/test:out/production CipherFrameworkTest
+java -cp out/production FeistelDemo
 
