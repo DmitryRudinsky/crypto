@@ -85,7 +85,7 @@ public class FeistelDemo {
         System.out.println("Пример 3: Влияние количества раундов");
         
         byte[] key = {0x11, 0x22, 0x33, 0x44};
-        byte[] plaintext = {0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC, 0xDE, 0xF0};
+        byte[] plaintext = {0x12, 0x34, 0x56, 0x78, (byte)0x9A, (byte)0xBC, (byte)0xDE, (byte)0xF0};
         
         int[] rounds = {2, 4, 8, 16};
         
