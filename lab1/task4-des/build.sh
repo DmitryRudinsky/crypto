@@ -8,7 +8,7 @@ mkdir -p out/test
 
 # Сначала компилируем зависимости
 echo "Компиляция зависимостей..."
-javac -d out/production ../task2-interfaces/src/KeySchedule.java ../task2-interfaces/src/RoundFunction.java ../task2-interfaces/src/SymmetricCipher.java
+javac -d out/production ../task2-interfaces/src/*.java
 if [ $? -ne 0 ]; then
     echo "Ошибка компиляции зависимостей из задания 2!"
     exit 1

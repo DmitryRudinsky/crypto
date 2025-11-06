@@ -398,8 +398,10 @@ public class DEALTest {
             
             boolean allPassed = true;
             for (int i = 0; i < 5; i++) {
+                byte[] plaintext = new byte[16];
                 String msg = String.format("Block %d Test!!", i);
-                byte[] plaintext = msg.getBytes(StandardCharsets.UTF_8);
+                byte[] msgBytes = msg.getBytes(StandardCharsets.UTF_8);
+                System.arraycopy(msgBytes, 0, plaintext, 0, Math.min(msgBytes.length, 16));
                 
                 byte[] ciphertext = deal.encrypt(plaintext);
                 byte[] decrypted = deal.decrypt(ciphertext);

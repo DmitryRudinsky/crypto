@@ -63,8 +63,8 @@ public class FeistelCipher implements SymmetricCipher {
         }
 
         byte[] result = new byte[block.length];
-        System.arraycopy(R, 0, result, 0, halfSize);
-        System.arraycopy(L, 0, result, halfSize, halfSize);
+        System.arraycopy(L, 0, result, 0, halfSize);
+        System.arraycopy(R, 0, result, halfSize, halfSize);
 
         return result;
     }
