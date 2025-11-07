@@ -165,24 +165,38 @@ CompletableFuture<Void> decryptFileAsync(String inputPath, String outputPath)
 
 ## Пример использования
 
-```java
-// Создание шифра
-DummyCipher cipher = new DummyCipher();
-cipher.setEncryptionKey(key);
-cipher.setDecryptionKey(key);
+### Новый API (соответствует заданию)
 
-// Создание контекста с режимом CBC и набивкой PKCS7
+```java
+// Создание ключа
+byte[] key = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
+byte[] iv = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+// Создание контекста (передаём ключ)
 CipherContext ctx = new CipherContext(
-    cipher, 
-    CipherMode.CBC, 
-    PaddingMode.PKCS7, 
-    8,
-    iv
+    new DummyCipher(),      // реализация алгоритма
+    key,                    // ← ключ шифрования
+    CipherMode.CBC,         // режим шифрования
+    PaddingMode.PKCS7,      // режим набивки
+    8,                      // размер блока
+    iv                      // вектор инициализации (опционально)
+    // дополнительные параметры (varargs)
 );
 
-// Асинхронное шифрование
-CompletableFuture<byte[]> encrypted = ctx.encryptAsync("Secret message".getBytes());
-CompletableFuture<byte[]> decrypted = ctx.decryptAsync(encrypted.join());
+// Вариант 1: Возврат результата
+byte[] encrypted = ctx.encryptAsync("Secret message".getBytes()).join();
+byte[] decrypted = ctx.decryptAsync(encrypted).join();
+
+// Вариант 2: Out-параметры (по заданию)
+byte[][] encryptedResult = new byte[1][];
+ctx.encryptAsync("Secret message".getBytes(), encryptedResult).join();
+
+byte[][] decryptedResult = new byte[1][];
+ctx.decryptAsync(encryptedResult[0], decryptedResult).join();
+
+// Вариант 3: Работа с файлами
+ctx.encryptFileAsync("input.txt", "output.enc").join();
+ctx.decryptFileAsync("output.enc", "decrypted.txt").join();
 
 // Освобождение ресурсов
 ctx.shutdown();

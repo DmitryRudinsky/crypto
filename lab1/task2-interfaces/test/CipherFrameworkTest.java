@@ -126,23 +126,23 @@ public class CipherFrameworkTest {
     }
 
     private static boolean testECBMode() {
-        System.out.println("Тест 4: ECB режим");
+        System.out.println("Тест 4: ECB режим (новый API с ключом)");
         try {
             byte[] key = {1, 2, 3, 4, 5, 6, 7, 8};
-            DummyCipher cipher = new DummyCipher();
-            cipher.setEncryptionKey(key);
-            cipher.setDecryptionKey(key);
-
             byte[] plaintext = "12345678".getBytes();
             
-            CipherContext ctx = new CipherContext(cipher, CipherMode.ECB, PaddingMode.PKCS7, 8);
+            // Используем новый конструктор с ключом
+            CipherContext ctx = new CipherContext(new DummyCipher(), key, CipherMode.ECB, PaddingMode.PKCS7, 8);
             
-            byte[] encrypted = ctx.encryptAsync(plaintext).join();
-            byte[] decrypted = ctx.decryptAsync(encrypted).join();
+            byte[][] encryptedResult = new byte[1][];
+            ctx.encryptAsync(plaintext, encryptedResult).join();
+            
+            byte[][] decryptedResult = new byte[1][];
+            ctx.decryptAsync(encryptedResult[0], decryptedResult).join();
             
             ctx.shutdown();
 
-            if (!Arrays.equals(plaintext, decrypted)) {
+            if (!Arrays.equals(plaintext, decryptedResult[0])) {
                 System.out.println("✗ FAILED: Данные не совпадают");
                 return false;
             }
@@ -159,25 +159,24 @@ public class CipherFrameworkTest {
     }
 
     private static boolean testCBCMode() {
-        System.out.println("Тест 5: CBC режим");
+        System.out.println("Тест 5: CBC режим (новый API)");
         try {
             byte[] key = {1, 2, 3, 4, 5, 6, 7, 8};
             byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0};
-            
-            DummyCipher cipher = new DummyCipher();
-            cipher.setEncryptionKey(key);
-            cipher.setDecryptionKey(key);
-
             byte[] plaintext = "Test CBC Mode".getBytes();
             
-            CipherContext ctx = new CipherContext(cipher, CipherMode.CBC, PaddingMode.PKCS7, 8, iv);
+            // Используем новый конструктор с ключом
+            CipherContext ctx = new CipherContext(new DummyCipher(), key, CipherMode.CBC, PaddingMode.PKCS7, 8, iv);
             
-            byte[] encrypted = ctx.encryptAsync(plaintext).join();
-            byte[] decrypted = ctx.decryptAsync(encrypted).join();
+            byte[][] encryptedResult = new byte[1][];
+            ctx.encryptAsync(plaintext, encryptedResult).join();
+            
+            byte[][] decryptedResult = new byte[1][];
+            ctx.decryptAsync(encryptedResult[0], decryptedResult).join();
             
             ctx.shutdown();
 
-            if (!Arrays.equals(plaintext, decrypted)) {
+            if (!Arrays.equals(plaintext, decryptedResult[0])) {
                 System.out.println("✗ FAILED: Данные не совпадают");
                 return false;
             }
@@ -193,30 +192,28 @@ public class CipherFrameworkTest {
     }
 
     private static boolean testEncryptDecrypt() {
-        System.out.println("Тест 6: Шифрование и дешифрование");
+        System.out.println("Тест 6: Шифрование и дешифрование (новый API)");
         try {
             byte[] key = {1, 2, 3, 4, 5, 6, 7, 8};
             byte[] iv = {9, 8, 7, 6, 5, 4, 3, 2};
-            
-            DummyCipher cipher = new DummyCipher();
-            cipher.setEncryptionKey(key);
-            cipher.setDecryptionKey(key);
 
             String original = "Hello, Cryptography!";
             byte[] plaintext = original.getBytes();
             
-            CipherContext ctx = new CipherContext(cipher, CipherMode.CBC, PaddingMode.PKCS7, 8, iv);
+            CipherContext ctx = new CipherContext(new DummyCipher(), key, CipherMode.CBC, PaddingMode.PKCS7, 8, iv);
             
-            byte[] encrypted = ctx.encryptAsync(plaintext).join();
+            byte[][] encryptedResult = new byte[1][];
+            ctx.encryptAsync(plaintext, encryptedResult).join();
             
-            if (Arrays.equals(plaintext, encrypted)) {
+            if (Arrays.equals(plaintext, encryptedResult[0])) {
                 System.out.println("✗ FAILED: Зашифрованные данные совпадают с исходными");
                 ctx.shutdown();
                 return false;
             }
 
-            byte[] decrypted = ctx.decryptAsync(encrypted).join();
-            String result = new String(decrypted);
+            byte[][] decryptedResult = new byte[1][];
+            ctx.decryptAsync(encryptedResult[0], decryptedResult).join();
+            String result = new String(decryptedResult[0]);
             
             ctx.shutdown();
 
@@ -238,26 +235,25 @@ public class CipherFrameworkTest {
     }
 
     private static boolean testAsyncEncryption() {
-        System.out.println("Тест 7: Асинхронное шифрование");
+        System.out.println("Тест 7: Асинхронное шифрование с out-параметрами");
         try {
             byte[] key = {1, 2, 3, 4, 5, 6, 7, 8};
             byte[] iv = {0, 0, 0, 0, 0, 0, 0, 0};
-            
-            DummyCipher cipher = new DummyCipher();
-            cipher.setEncryptionKey(key);
-            cipher.setDecryptionKey(key);
-
             byte[] plaintext = "Async test".getBytes();
             
-            CipherContext ctx = new CipherContext(cipher, CipherMode.CBC, PaddingMode.PKCS7, 8, iv);
+            CipherContext ctx = new CipherContext(new DummyCipher(), key, CipherMode.CBC, PaddingMode.PKCS7, 8, iv);
             
-            byte[] encrypted = ctx.encryptAsync(plaintext).join();
-            byte[] decrypted = ctx.decryptAsync(encrypted).join();
+            // Тестируем методы с out-параметрами
+            byte[][] encryptedResult = new byte[1][];
+            ctx.encryptAsync(plaintext, encryptedResult).join();
+            
+            byte[][] decryptedResult = new byte[1][];
+            ctx.decryptAsync(encryptedResult[0], decryptedResult).join();
             
             ctx.shutdown();
 
-            if (!Arrays.equals(plaintext, decrypted)) {
-                System.out.println("✗ FAILED: Асинхронная операция вернула неверные данные");
+            if (!Arrays.equals(plaintext, decryptedResult[0])) {
+                System.out.println("✗ FAILED: Асинхронная операция с out-параметрами вернула неверные данные");
                 return false;
             }
 
@@ -271,4 +267,3 @@ public class CipherFrameworkTest {
         }
     }
 }
-

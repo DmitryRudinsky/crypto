@@ -8,53 +8,78 @@ public class Demo {
 
         byte[] key = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
         byte[] iv = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-        
-        DummyCipher cipher = new DummyCipher();
-        cipher.setEncryptionKey(key);
-        cipher.setDecryptionKey(key);
 
-        demoECB(cipher);
-        demoCBC(cipher, iv);
+        demoNewAPI(key, iv);
+        demoECB(key);
+        demoCBC(key, iv);
         demoPadding();
-        demoAsync(cipher, iv);
+        demoAsync(key, iv);
+        demoFileEncryption(key, iv);
 
         System.out.println("\n=== Демонстрация завершена ===");
     }
 
-    private static void demoECB(SymmetricCipher cipher) {
-        System.out.println("Пример 1: ECB режим");
-        String plaintext = "Hello World!";
+    private static void demoNewAPI(byte[] key, byte[] iv) {
+        System.out.println("Пример 1: Новый API (конструктор с ключом и out-параметры)");
+        String plaintext = "New API Demo!";
         byte[] data = plaintext.getBytes();
 
-        CipherContext ctx = new CipherContext(cipher, CipherMode.ECB, PaddingMode.PKCS7, 8);
+        // Используем новый конструктор, принимающий ключ
+        CipherContext ctx = new CipherContext(new DummyCipher(), key, CipherMode.CBC, PaddingMode.PKCS7, 8, iv);
 
         try {
-            byte[] encrypted = ctx.encryptAsync(data).join();
+            byte[][] encryptedResult = new byte[1][];
+            ctx.encryptAsync(data, encryptedResult).join();
             System.out.println("Исходный текст: " + plaintext);
-            System.out.println("Зашифровано: " + toHex(encrypted));
+            System.out.println("Зашифровано: " + toHex(encryptedResult[0]));
 
-            byte[] decrypted = ctx.decryptAsync(encrypted).join();
-            System.out.println("Расшифровано: " + new String(decrypted));
+            byte[][] decryptedResult = new byte[1][];
+            ctx.decryptAsync(encryptedResult[0], decryptedResult).join();
+            System.out.println("Расшифровано: " + new String(decryptedResult[0]));
         } finally {
             ctx.shutdown();
         }
         System.out.println();
     }
 
-    private static void demoCBC(SymmetricCipher cipher, byte[] iv) {
-        System.out.println("Пример 2: CBC режим с IV");
+    private static void demoECB(byte[] key) {
+        System.out.println("Пример 2: ECB режим (с параллельной обработкой)");
+        String plaintext = "Hello World!";
+        byte[] data = plaintext.getBytes();
+
+        CipherContext ctx = new CipherContext(new DummyCipher(), key, CipherMode.ECB, PaddingMode.PKCS7, 8);
+
+        try {
+            byte[][] encryptedResult = new byte[1][];
+            ctx.encryptAsync(data, encryptedResult).join();
+            System.out.println("Исходный текст: " + plaintext);
+            System.out.println("Зашифровано: " + toHex(encryptedResult[0]));
+
+            byte[][] decryptedResult = new byte[1][];
+            ctx.decryptAsync(encryptedResult[0], decryptedResult).join();
+            System.out.println("Расшифровано: " + new String(decryptedResult[0]));
+        } finally {
+            ctx.shutdown();
+        }
+        System.out.println();
+    }
+
+    private static void demoCBC(byte[] key, byte[] iv) {
+        System.out.println("Пример 3: CBC режим с IV");
         String plaintext = "Symmetric Encryption";
         byte[] data = plaintext.getBytes();
 
-        CipherContext ctx = new CipherContext(cipher, CipherMode.CBC, PaddingMode.PKCS7, 8, iv);
+        CipherContext ctx = new CipherContext(new DummyCipher(), key, CipherMode.CBC, PaddingMode.PKCS7, 8, iv);
 
         try {
-            byte[] encrypted = ctx.encryptAsync(data).join();
+            byte[][] encryptedResult = new byte[1][];
+            ctx.encryptAsync(data, encryptedResult).join();
             System.out.println("Исходный текст: " + plaintext);
-            System.out.println("Зашифровано: " + toHex(encrypted));
+            System.out.println("Зашифровано: " + toHex(encryptedResult[0]));
 
-            byte[] decrypted = ctx.decryptAsync(encrypted).join();
-            System.out.println("Расшифровано: " + new String(decrypted));
+            byte[][] decryptedResult = new byte[1][];
+            ctx.decryptAsync(encryptedResult[0], decryptedResult).join();
+            System.out.println("Расшифровано: " + new String(decryptedResult[0]));
         } finally {
             ctx.shutdown();
         }
@@ -62,7 +87,7 @@ public class Demo {
     }
 
     private static void demoPadding() {
-        System.out.println("Пример 3: Различные режимы набивки");
+        System.out.println("Пример 4: Различные режимы набивки");
         byte[] data = "Test".getBytes();
 
         System.out.println("Исходные данные (" + data.length + " байт): " + toHex(data));
@@ -76,25 +101,42 @@ public class Demo {
         System.out.println();
     }
 
-    private static void demoAsync(SymmetricCipher cipher, byte[] iv) {
-        System.out.println("Пример 4: Асинхронное шифрование");
+    private static void demoAsync(byte[] key, byte[] iv) {
+        System.out.println("Пример 5: Асинхронное шифрование с out-параметрами");
         
         String[] texts = {"Message 1", "Message 2", "Message 3"};
-        CipherContext ctx = new CipherContext(cipher, CipherMode.CBC, PaddingMode.PKCS7, 8, iv);
+        CipherContext ctx = new CipherContext(new DummyCipher(), key, CipherMode.CBC, PaddingMode.PKCS7, 8, iv);
 
         try {
             CompletableFuture<?>[] futures = new CompletableFuture[texts.length];
 
             for (int i = 0; i < texts.length; i++) {
                 final int index = i;
-                futures[i] = ctx.encryptAsync(texts[i].getBytes())
-                    .thenAccept(encrypted -> {
-                        System.out.println("Зашифровано [" + index + "]: " + toHex(encrypted));
+                byte[][] result = new byte[1][];
+                futures[i] = ctx.encryptAsync(texts[i].getBytes(), result)
+                    .thenRun(() -> {
+                        System.out.println("Зашифровано [" + index + "]: " + toHex(result[0]));
                     });
             }
 
             CompletableFuture.allOf(futures).join();
             System.out.println("Все операции завершены асинхронно");
+        } finally {
+            ctx.shutdown();
+        }
+        System.out.println();
+    }
+
+    private static void demoFileEncryption(byte[] key, byte[] iv) {
+        System.out.println("Пример 6: Шифрование файлов");
+        
+        CipherContext ctx = new CipherContext(new DummyCipher(), key, CipherMode.ECB, PaddingMode.PKCS7, 8);
+
+        try {
+            System.out.println("Демонстрация работы с файлами:");
+            System.out.println("- ctx.encryptFileAsync(\"input.txt\", \"output.enc\")");
+            System.out.println("- ctx.decryptFileAsync(\"output.enc\", \"decrypted.txt\")");
+            System.out.println("(Методы доступны для работы с файлами)");
         } finally {
             ctx.shutdown();
         }
@@ -109,4 +151,3 @@ public class Demo {
         return sb.toString();
     }
 }
-

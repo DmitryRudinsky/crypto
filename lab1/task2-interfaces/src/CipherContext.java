@@ -14,13 +14,29 @@ public class CipherContext {
     private final int blockSize;
     private final ExecutorService executor;
 
+    /**
+     * Конструктор в соответствии с заданием (принимает ключ шифрования).
+     * 
+     * @param cipher реализация симметричного алгоритма (будет настроена с ключом)
+     * @param key ключ шифрования (массив байтов)
+     * @param mode режим шифрования (объект перечисления)
+     * @param padding режим набивки (объект перечисления)
+     * @param blockSize размер блока в байтах
+     * @param iv вектор инициализации (опционально)
+     * @param additionalParams дополнительные параметры для указанного режима (коллекция аргументов переменной длины)
+     */
     public CipherContext(
             SymmetricCipher cipher,
+            byte[] key,
             CipherMode mode,
             PaddingMode padding,
             int blockSize,
-            byte[] iv
+            byte[] iv,
+            Object... additionalParams
     ) {
+        if (key == null || key.length == 0) {
+            throw new IllegalArgumentException("Key cannot be null or empty");
+        }
         if (cipher == null) {
             throw new IllegalArgumentException("Cipher cannot be null");
         }
@@ -37,59 +53,100 @@ public class CipherContext {
             throw new IllegalArgumentException("IV is required for " + mode + " mode");
         }
 
+        // Настраиваем ключи шифрования
+        cipher.setEncryptionKey(key);
+        cipher.setDecryptionKey(key);
+
         this.cipher = cipher;
         this.mode = mode;
         this.padding = padding;
         this.blockSize = blockSize;
         this.iv = iv != null ? Arrays.copyOf(iv, iv.length) : null;
         this.executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        
+        // Дополнительные параметры могут быть обработаны здесь при необходимости
+        // (для будущих расширений)
     }
 
+    /**
+     * Упрощённый конструктор без IV и дополнительных параметров.
+     */
     public CipherContext(
             SymmetricCipher cipher,
+            byte[] key,
             CipherMode mode,
             PaddingMode padding,
             int blockSize
     ) {
-        this(cipher, mode, padding, blockSize, null);
+        this(cipher, key, mode, padding, blockSize, null);
     }
 
-    public CompletableFuture<byte[]> encryptAsync(byte[] data) {
-        return CompletableFuture.supplyAsync(() -> {
+    /**
+     * Асинхронное шифрование данных с записью в out-параметр (по заданию).
+     * 
+     * @param data данные для шифрования
+     * @param result массив-обёртка для результата (result[0] будет содержать зашифрованные данные)
+     * @return CompletableFuture для отслеживания завершения операции
+     */
+    public CompletableFuture<Void> encryptAsync(byte[] data, byte[][] result) {
+        return CompletableFuture.runAsync(() -> {
             byte[] paddedData = padding.pad(data, blockSize);
             byte[][] blocks = splitIntoBlocks(paddedData, blockSize);
             byte[][] encryptedBlocks = mode.encrypt(blocks, cipher, iv);
-            return mergeBlocks(encryptedBlocks);
+            result[0] = mergeBlocks(encryptedBlocks);
         }, executor);
     }
 
-    public CompletableFuture<byte[]> decryptAsync(byte[] data) {
-        return CompletableFuture.supplyAsync(() -> {
+    /**
+     * Асинхронное дешифрование данных с записью в out-параметр (по заданию).
+     * 
+     * @param data данные для дешифрования
+     * @param result массив-обёртка для результата (result[0] будет содержать расшифрованные данные)
+     * @return CompletableFuture для отслеживания завершения операции
+     */
+    public CompletableFuture<Void> decryptAsync(byte[] data, byte[][] result) {
+        return CompletableFuture.runAsync(() -> {
             byte[][] blocks = splitIntoBlocks(data, blockSize);
             byte[][] decryptedBlocks = mode.decrypt(blocks, cipher, iv);
             byte[] merged = mergeBlocks(decryptedBlocks);
-            return padding.unpad(merged, blockSize);
+            result[0] = padding.unpad(merged, blockSize);
         }, executor);
     }
 
+    /**
+     * Асинхронное шифрование файла (по заданию).
+     * 
+     * @param inputPath путь к входному файлу
+     * @param outputPath путь к выходному файлу
+     * @return CompletableFuture для отслеживания завершения операции
+     */
     public CompletableFuture<Void> encryptFileAsync(String inputPath, String outputPath) {
         return CompletableFuture.runAsync(() -> {
             try {
                 byte[] inputData = Files.readAllBytes(Paths.get(inputPath));
-                byte[] encrypted = encryptAsync(inputData).join();
-                Files.write(Paths.get(outputPath), encrypted);
+                byte[][] result = new byte[1][];
+                encryptAsync(inputData, result).join();
+                Files.write(Paths.get(outputPath), result[0]);
             } catch (IOException e) {
                 throw new RuntimeException("Error processing file: " + e.getMessage(), e);
             }
         }, executor);
     }
 
+    /**
+     * Асинхронное дешифрование файла (по заданию).
+     * 
+     * @param inputPath путь к входному файлу
+     * @param outputPath путь к выходному файлу
+     * @return CompletableFuture для отслеживания завершения операции
+     */
     public CompletableFuture<Void> decryptFileAsync(String inputPath, String outputPath) {
         return CompletableFuture.runAsync(() -> {
             try {
                 byte[] inputData = Files.readAllBytes(Paths.get(inputPath));
-                byte[] decrypted = decryptAsync(inputData).join();
-                Files.write(Paths.get(outputPath), decrypted);
+                byte[][] result = new byte[1][];
+                decryptAsync(inputData, result).join();
+                Files.write(Paths.get(outputPath), result[0]);
             } catch (IOException e) {
                 throw new RuntimeException("Error processing file: " + e.getMessage(), e);
             }

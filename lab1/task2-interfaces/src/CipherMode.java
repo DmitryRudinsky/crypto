@@ -1,24 +1,25 @@
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 public enum CipherMode {
     ECB {
         @Override
         public byte[][] encrypt(byte[][] blocks, SymmetricCipher cipher, byte[] iv) {
-            byte[][] result = new byte[blocks.length][];
-            for (int i = 0; i < blocks.length; i++) {
-                result[i] = cipher.encrypt(blocks[i]);
-            }
-            return result;
+            // Параллельная обработка блоков (ECB позволяет это)
+            return IntStream.range(0, blocks.length)
+                    .parallel()
+                    .mapToObj(i -> cipher.encrypt(blocks[i]))
+                    .toArray(byte[][]::new);
         }
 
         @Override
         public byte[][] decrypt(byte[][] blocks, SymmetricCipher cipher, byte[] iv) {
-            byte[][] result = new byte[blocks.length][];
-            for (int i = 0; i < blocks.length; i++) {
-                result[i] = cipher.decrypt(blocks[i]);
-            }
-            return result;
+            // Параллельная обработка блоков (ECB позволяет это)
+            return IntStream.range(0, blocks.length)
+                    .parallel()
+                    .mapToObj(i -> cipher.decrypt(blocks[i]))
+                    .toArray(byte[][]::new);
         }
 
         @Override
@@ -169,15 +170,19 @@ public enum CipherMode {
         }
 
         private byte[][] process(byte[][] blocks, SymmetricCipher cipher, byte[] counter) {
-            byte[][] result = new byte[blocks.length][];
-            byte[] currentCounter = Arrays.copyOf(counter, counter.length);
-
-            for (int i = 0; i < blocks.length; i++) {
-                byte[] encrypted = cipher.encrypt(currentCounter);
-                result[i] = xorBytes(blocks[i], encrypted);
-                incrementCounter(currentCounter);
-            }
-            return result;
+            // Параллельная обработка блоков (CTR позволяет это, так как счетчики независимы)
+            return IntStream.range(0, blocks.length)
+                    .parallel()
+                    .mapToObj(i -> {
+                        byte[] blockCounter = Arrays.copyOf(counter, counter.length);
+                        // Увеличиваем счетчик i раз для текущего блока
+                        for (int j = 0; j < i; j++) {
+                            incrementCounter(blockCounter);
+                        }
+                        byte[] encrypted = cipher.encrypt(blockCounter);
+                        return xorBytes(blocks[i], encrypted);
+                    })
+                    .toArray(byte[][]::new);
         }
 
         private void incrementCounter(byte[] counter) {
