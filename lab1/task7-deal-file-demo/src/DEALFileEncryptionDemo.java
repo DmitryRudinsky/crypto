@@ -86,14 +86,14 @@ public class DEALFileEncryptionDemo {
             
             // Шифруем
             DEAL deal = new DEAL();
-            deal.setEncryptionKey(key);
-            deal.setDecryptionKey(key);
             
             byte[] iv = new byte[16];
             random.nextBytes(iv);
             
-            CipherContext ctx = new CipherContext(deal, CipherMode.CBC, PaddingMode.PKCS7, 16, iv);
-            byte[] encrypted = ctx.encryptAsync(randomData).join();
+            CipherContext ctx = new CipherContext(deal, key, CipherMode.CBC, PaddingMode.PKCS7, 16, iv);
+            byte[][] encryptedResult = new byte[1][];
+            ctx.encryptAsync(randomData, encryptedResult).join();
+            byte[] encrypted = encryptedResult[0];
             ctx.shutdown();
             
             String encFilename = filename + ".enc";
@@ -102,8 +102,10 @@ public class DEALFileEncryptionDemo {
             System.out.println("    Размер: " + encrypted.length + " байт");
             
             // Дешифруем
-            ctx = new CipherContext(deal, CipherMode.CBC, PaddingMode.PKCS7, 16, iv);
-            byte[] decrypted = ctx.decryptAsync(encrypted).join();
+            ctx = new CipherContext(deal, key, CipherMode.CBC, PaddingMode.PKCS7, 16, iv);
+            byte[][] decryptedResult = new byte[1][];
+            ctx.decryptAsync(encrypted, decryptedResult).join();
+            byte[] decrypted = decryptedResult[0];
             ctx.shutdown();
             
             String decFilename = filename.replace(".bin", "_decrypted.bin");
@@ -164,12 +166,12 @@ public class DEALFileEncryptionDemo {
         
         // Шифруем текстовый файл
         DEAL deal = new DEAL();
-        deal.setEncryptionKey(key);
-        deal.setDecryptionKey(key);
         
-        CipherContext ctx = new CipherContext(deal, CipherMode.CBC, PaddingMode.PKCS7, 16, iv);
+        CipherContext ctx = new CipherContext(deal, key, CipherMode.CBC, PaddingMode.PKCS7, 16, iv);
         byte[] textData = Files.readAllBytes(Paths.get(textFile));
-        byte[] encrypted = ctx.encryptAsync(textData).join();
+        byte[][] encryptedResult = new byte[1][];
+        ctx.encryptAsync(textData, encryptedResult).join();
+        byte[] encrypted = encryptedResult[0];
         ctx.shutdown();
         
         String encFile = textFile + ".enc";
@@ -178,8 +180,10 @@ public class DEALFileEncryptionDemo {
         System.out.println("  Размер зашифрованного файла: " + encrypted.length + " байт");
         
         // Дешифруем
-        ctx = new CipherContext(deal, CipherMode.CBC, PaddingMode.PKCS7, 16, iv);
-        byte[] decrypted = ctx.decryptAsync(encrypted).join();
+        ctx = new CipherContext(deal, key, CipherMode.CBC, PaddingMode.PKCS7, 16, iv);
+        byte[][] decryptedResult = new byte[1][];
+        ctx.decryptAsync(encrypted, decryptedResult).join();
+        byte[] decrypted = decryptedResult[0];
         ctx.shutdown();
         
         String decFile = textFile.replace(".txt", "_decrypted.txt");
@@ -216,8 +220,6 @@ public class DEALFileEncryptionDemo {
         random.nextBytes(iv);
         
         DEAL deal = new DEAL();
-        deal.setEncryptionKey(key);
-        deal.setDecryptionKey(key);
         
         // Тестируем разные режимы
         CipherMode[] modes = {CipherMode.ECB, CipherMode.CBC, CipherMode.CTR, CipherMode.OFB, CipherMode.CFB};
@@ -228,15 +230,19 @@ public class DEALFileEncryptionDemo {
             
             try {
                 CipherContext ctx = mode.requiresIV() 
-                    ? new CipherContext(deal, mode, PaddingMode.PKCS7, 16, iv)
-                    : new CipherContext(deal, mode, PaddingMode.PKCS7, 16);
+                    ? new CipherContext(deal, key, mode, PaddingMode.PKCS7, 16, iv)
+                    : new CipherContext(deal, key, mode, PaddingMode.PKCS7, 16);
                 
                 long startEnc = System.nanoTime();
-                byte[] encrypted = ctx.encryptAsync(data).join();
+                byte[][] encryptedResult = new byte[1][];
+                ctx.encryptAsync(data, encryptedResult).join();
+                byte[] encrypted = encryptedResult[0];
                 long endEnc = System.nanoTime();
                 
                 long startDec = System.nanoTime();
-                byte[] decrypted = ctx.decryptAsync(encrypted).join();
+                byte[][] decryptedResult = new byte[1][];
+                ctx.decryptAsync(encrypted, decryptedResult).join();
+                byte[] decrypted = decryptedResult[0];
                 long endDec = System.nanoTime();
                 
                 ctx.shutdown();
@@ -272,8 +278,6 @@ public class DEALFileEncryptionDemo {
         random.nextBytes(iv);
         
         DEAL deal = new DEAL();
-        deal.setEncryptionKey(key);
-        deal.setDecryptionKey(key);
         
         // Тестируем разные размеры данных и режимы паддинга
         int[] dataSizes = {10, 16, 17, 31, 32, 33};
@@ -287,9 +291,14 @@ public class DEALFileEncryptionDemo {
                 random.nextBytes(data);
                 
                 try {
-                    CipherContext ctx = new CipherContext(deal, CipherMode.CBC, padding, 16, iv);
-                    byte[] encrypted = ctx.encryptAsync(data).join();
-                    byte[] decrypted = ctx.decryptAsync(encrypted).join();
+                    CipherContext ctx = new CipherContext(deal, key, CipherMode.CBC, padding, 16, iv);
+                    byte[][] encryptedResult = new byte[1][];
+                    ctx.encryptAsync(data, encryptedResult).join();
+                    byte[] encrypted = encryptedResult[0];
+                    
+                    byte[][] decryptedResult = new byte[1][];
+                    ctx.decryptAsync(encrypted, decryptedResult).join();
+                    byte[] decrypted = decryptedResult[0];
                     ctx.shutdown();
                     
                     boolean correct = Arrays.equals(data, decrypted);

@@ -1,0 +1,30 @@
+{
+    "java.project.sourcePaths": [
+        "task1-bit-permutation/src",
+        "task1-bit-permutation/lib-src",
+        "task2-interfaces/src",
+        "task3-feistel/src",
+        "task3-feistel/lib-src",
+        "task4-des/src",
+        "task4-des/lib-src",
+        "task5-file-encryption-demo/src",
+        "task5-file-encryption-demo/lib-src",
+        "task6-deal/src",
+        "task6-deal/lib-src",
+        "task7-deal-file-demo/src",
+        "task7-deal-file-demo/lib-src"
+    ],
+    "java.project.outputPath": "bin",
+    
+    // Отключение диагностики и проверок
+    "java.errors.incompleteClasspath.severity": "ignore",
+    "java.configuration.checkProjectSettingsExclusions": false,
+    "java.autobuild.enabled": false,
+    "java.maxConcurrentBuilds": 1,
+    "java.completion.enabled": true,
+    "java.compile.nullAnalysis.mode": "disabled",
+    
+    // Отключение показа проблем
+    "problems.decorations.enabled": false,
+    "problems.showCurrentInStatus": false
+}

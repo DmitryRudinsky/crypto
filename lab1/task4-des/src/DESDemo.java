@@ -49,12 +49,10 @@ public class DESDemo {
                       (byte)0x4B, (byte)0x5A, (byte)0x69, (byte)0x78};
         byte[] iv = {(byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
                      (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00};
-        
-        des.setEncryptionKey(key);
-        des.setDecryptionKey(key);
 
         CipherContext ctx = new CipherContext(
             des,
+            key,
             CipherMode.CBC,
             PaddingMode.PKCS7,
             8,
@@ -65,10 +63,14 @@ public class DESDemo {
         System.out.println("Сообщение: " + message);
 
         try {
-            byte[] encrypted = ctx.encryptAsync(message.getBytes()).join();
+            byte[][] encryptedResult = new byte[1][];
+            ctx.encryptAsync(message.getBytes(), encryptedResult).join();
+            byte[] encrypted = encryptedResult[0];
             System.out.println("Зашифровано (CBC): " + toHex(encrypted));
 
-            byte[] decrypted = ctx.decryptAsync(encrypted).join();
+            byte[][] decryptedResult = new byte[1][];
+            ctx.decryptAsync(encrypted, decryptedResult).join();
+            byte[] decrypted = decryptedResult[0];
             System.out.println("Расшифровано: " + new String(decrypted));
             
             if (message.equals(new String(decrypted))) {

@@ -119,19 +119,22 @@ public class DESFileDemo {
             byte[] iv = new byte[8];
             random.nextBytes(iv);
             
-            des.setEncryptionKey(key);
-            des.setDecryptionKey(key);
-            
             CipherContext ctx = new CipherContext(
                 des,
+                key,
                 CipherMode.CBC,
                 PaddingMode.PKCS7,
                 8,
                 iv
             );
             
-            byte[] encrypted = ctx.encryptAsync(randomData).join();
-            byte[] decrypted = ctx.decryptAsync(encrypted).join();
+            byte[][] encryptedResult = new byte[1][];
+            ctx.encryptAsync(randomData, encryptedResult).join();
+            byte[] encrypted = encryptedResult[0];
+            
+            byte[][] decryptedResult = new byte[1][];
+            ctx.decryptAsync(encrypted, decryptedResult).join();
+            byte[] decrypted = decryptedResult[0];
             
             ctx.shutdown();
             
@@ -167,11 +170,9 @@ public class DESFileDemo {
         byte[] iv = new byte[8];
         new SecureRandom().nextBytes(iv);
         
-        des.setEncryptionKey(key);
-        des.setDecryptionKey(key);
-        
         CipherContext ctx = new CipherContext(
             des,
+            key,
             CipherMode.CBC,
             PaddingMode.PKCS7,
             8,
@@ -221,11 +222,9 @@ public class DESFileDemo {
         byte[] iv = new byte[8];
         new SecureRandom().nextBytes(iv);
         
-        des.setEncryptionKey(key);
-        des.setDecryptionKey(key);
-        
         CipherContext ctx = new CipherContext(
             des,
+            key,
             CipherMode.CFB,
             PaddingMode.PKCS7,
             8,
@@ -269,11 +268,9 @@ public class DESFileDemo {
         byte[] iv = new byte[8];
         new SecureRandom().nextBytes(iv);
         
-        des.setEncryptionKey(key);
-        des.setDecryptionKey(key);
-        
         CipherContext ctx = new CipherContext(
             des,
+            key,
             CipherMode.OFB,
             PaddingMode.PKCS7,
             8,
@@ -335,11 +332,9 @@ public class DESFileDemo {
             byte[] key = generateRandomKey();
             byte[] iv = mode.requiresIV() ? generateRandomIV() : null;
             
-            des.setEncryptionKey(key);
-            des.setDecryptionKey(key);
-            
             CipherContext ctx = new CipherContext(
                 des,
+                key,
                 mode,
                 PaddingMode.PKCS7,
                 8,
@@ -347,11 +342,15 @@ public class DESFileDemo {
             );
             
             long startEnc = System.currentTimeMillis();
-            byte[] encrypted = ctx.encryptAsync(originalData).join();
+            byte[][] encryptedResult = new byte[1][];
+            ctx.encryptAsync(originalData, encryptedResult).join();
+            byte[] encrypted = encryptedResult[0];
             long encTime = System.currentTimeMillis() - startEnc;
             
             long startDec = System.currentTimeMillis();
-            byte[] decrypted = ctx.decryptAsync(encrypted).join();
+            byte[][] decryptedResult = new byte[1][];
+            ctx.decryptAsync(encrypted, decryptedResult).join();
+            byte[] decrypted = decryptedResult[0];
             long decTime = System.currentTimeMillis() - startDec;
             
             ctx.shutdown();

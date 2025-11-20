@@ -1,0 +1,32 @@
+{
+    "// Инструкция": "Чтобы полностью отключить проверки, переименуйте settings.json в settings.json.old и этот файл в settings.json",
+    
+    "java.project.sourcePaths": [
+        "task1-bit-permutation/src",
+        "task2-interfaces/src",
+        "task3-feistel/src",
+        "task4-des/src",
+        "task5-file-encryption-demo/src",
+        "task6-deal/src",
+        "task7-deal-file-demo/src"
+    ],
+    "java.project.outputPath": "bin",
+    
+    "java.errors.incompleteClasspath.severity": "ignore",
+    "java.configuration.checkProjectSettingsExclusions": false,
+    "java.autobuild.enabled": false,
+    "java.completion.enabled": false,
+    "java.compile.nullAnalysis.mode": "disabled",
+    "java.codeGeneration.useBlocks": false,
+    "java.semanticHighlighting.enabled": false,
+    
+    "problems.decorations.enabled": false,
+    "problems.showCurrentInStatus": false,
+    
+    "java.progressReports.enabled": false,
+    "java.showBuildStatusBar": false,
+    
+    "java.jdt.ls.java.home": "",
+    "redhat.telemetry.enabled": false
+}
+

@@ -153,12 +153,10 @@ public class FeistelCipherTest {
 
             byte[] key = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
             byte[] iv = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-            
-            cipher.setEncryptionKey(key);
-            cipher.setDecryptionKey(key);
 
             CipherContext ctx = new CipherContext(
                 cipher,
+                key,
                 CipherMode.CBC,
                 PaddingMode.PKCS7,
                 8,
@@ -166,8 +164,13 @@ public class FeistelCipherTest {
             );
 
             String message = "Feistel network test";
-            byte[] encrypted = ctx.encryptAsync(message.getBytes()).join();
-            byte[] decrypted = ctx.decryptAsync(encrypted).join();
+            byte[][] encryptedResult = new byte[1][];
+            ctx.encryptAsync(message.getBytes(), encryptedResult).join();
+            byte[] encrypted = encryptedResult[0];
+            
+            byte[][] decryptedResult = new byte[1][];
+            ctx.decryptAsync(encrypted, decryptedResult).join();
+            byte[] decrypted = decryptedResult[0];
             
             ctx.shutdown();
 

@@ -50,12 +50,10 @@ public class FeistelDemo {
         
         byte[] key = {0x0F, 0x1E, 0x2D, 0x3C, 0x4B, 0x5A, 0x69, 0x78};
         byte[] iv = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-        
-        feistel.setEncryptionKey(key);
-        feistel.setDecryptionKey(key);
 
         CipherContext ctx = new CipherContext(
             feistel,
+            key,
             CipherMode.CBC,
             PaddingMode.PKCS7,
             8,
@@ -66,10 +64,14 @@ public class FeistelDemo {
         System.out.println("Сообщение: " + message);
 
         try {
-            byte[] encrypted = ctx.encryptAsync(message.getBytes()).join();
+            byte[][] encryptedResult = new byte[1][];
+            ctx.encryptAsync(message.getBytes(), encryptedResult).join();
+            byte[] encrypted = encryptedResult[0];
             System.out.println("Зашифровано (CBC): " + toHex(encrypted));
 
-            byte[] decrypted = ctx.decryptAsync(encrypted).join();
+            byte[][] decryptedResult = new byte[1][];
+            ctx.decryptAsync(encrypted, decryptedResult).join();
+            byte[] decrypted = decryptedResult[0];
             System.out.println("Расшифровано: " + new String(decrypted));
             
             if (message.equals(new String(decrypted))) {
