@@ -74,6 +74,18 @@ chmod +x run-demo.sh
 ./run-demo.sh
 cd ..
 echo
+echo "Нажмите Enter для продолжения..."
+read
+
+# Задание 7
+echo "==================================="
+echo "Задание 7: Демонстрация DEAL для файлов"
+echo "==================================="
+cd task7-deal-file-demo
+chmod +x run-demo.sh
+./run-demo.sh
+cd ..
+echo
 
 echo "======================================"
 echo "✓ Все демонстрации завершены!"

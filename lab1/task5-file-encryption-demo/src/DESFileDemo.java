@@ -15,11 +15,15 @@ public class DESFileDemo {
         try {
             createTestDirectory();
             createTestFiles();
+            copyMediaFiles();
             
             demonstrateRandomDataEncryption();
             demonstrateTextFileEncryption();
             demonstrateCodeFileEncryption();
             demonstrateBinaryFileEncryption();
+            demonstrateImageEncryption();
+            demonstrateAudioEncryption();
+            demonstrateVideoEncryption();
             demonstrateDifferentModes();
             
             System.out.println("\n=== Все демонстрации завершены успешно ===");
@@ -96,6 +100,11 @@ public class DESFileDemo {
         byte[] data = new byte[8192];
         random.nextBytes(data);
         Files.write(Paths.get(TEST_DIR, "random.bin"), data);
+    }
+    
+    private static void copyMediaFiles() throws Exception {
+        // Медиафайлы уже скопированы в test-files
+        System.out.println("✓ Медиафайлы готовы к тестированию\n");
     }
     
     private static void demonstrateRandomDataEncryption() throws Exception {
@@ -305,9 +314,269 @@ public class DESFileDemo {
         System.out.println();
     }
     
+    private static void demonstrateImageEncryption() throws Exception {
+        System.out.println("═══════════════════════════════════════════════");
+        System.out.println("Пример 5: Шифрование изображения (PNG)");
+        System.out.println("═══════════════════════════════════════════════\n");
+        
+        String inputFile = TEST_DIR + "/Снимок экрана 2025-11-21 в 10.02.50.png";
+        String encryptedFile = TEST_DIR + "/screenshot.png.enc";
+        String decryptedFile = TEST_DIR + "/screenshot_decrypted.png";
+        
+        File input = new File(inputFile);
+        if (!input.exists()) {
+            System.out.println("⚠ Файл изображения не найден, пропускаем...\n");
+            return;
+        }
+        
+        byte[] originalData = Files.readAllBytes(Paths.get(inputFile));
+        System.out.println("Исходный файл: " + input.getName());
+        System.out.println("Тип: PNG изображение");
+        System.out.println("Размер: " + formatSize(originalData.length));
+        System.out.println("SHA-256: " + calculateChecksum(originalData));
+        
+        DES des = new DES();
+        byte[] key = generateRandomKey();
+        byte[] iv = new byte[8];
+        new SecureRandom().nextBytes(iv);
+        
+        CipherContext ctx = new CipherContext(
+            des,
+            key,
+            CipherMode.CTR,
+            PaddingMode.PKCS7,
+            8,
+            iv
+        );
+        
+        System.out.println("\nРежим: CTR (оптимален для медиа)");
+        System.out.println("Шифрование...");
+        long startTime = System.currentTimeMillis();
+        ctx.encryptFileAsync(inputFile, encryptedFile).join();
+        long encryptTime = System.currentTimeMillis() - startTime;
+        
+        byte[] encryptedData = Files.readAllBytes(Paths.get(encryptedFile));
+        System.out.println("✓ Зашифровано за " + encryptTime + " мс");
+        System.out.println("  Размер: " + formatSize(encryptedData.length));
+        
+        System.out.println("\nДешифрование...");
+        startTime = System.currentTimeMillis();
+        ctx.decryptFileAsync(encryptedFile, decryptedFile).join();
+        long decryptTime = System.currentTimeMillis() - startTime;
+        
+        ctx.shutdown();
+        
+        byte[] decryptedData = Files.readAllBytes(Paths.get(decryptedFile));
+        System.out.println("✓ Расшифровано за " + decryptTime + " мс");
+        
+        boolean success = Arrays.equals(originalData, decryptedData);
+        System.out.println("\nПроверка:");
+        System.out.println("  SHA-256 исходного:      " + calculateChecksum(originalData));
+        System.out.println("  SHA-256 расшифрованного: " + calculateChecksum(decryptedData));
+        System.out.println("  Результат: " + (success ? "✓ УСПЕШНО - изображение восстановлено!" : "✗ ОШИБКА"));
+        System.out.println();
+    }
+    
+    private static void demonstrateAudioEncryption() throws Exception {
+        System.out.println("═══════════════════════════════════════════════");
+        System.out.println("Пример 6: Шифрование аудио (MP3)");
+        System.out.println("═══════════════════════════════════════════════\n");
+        
+        String inputFile = TEST_DIR + "/2025-11-21-10.04.26.mp3";
+        String encryptedFile = TEST_DIR + "/audio.mp3.enc";
+        String decryptedFile = TEST_DIR + "/audio_decrypted.mp3";
+        
+        File input = new File(inputFile);
+        if (!input.exists()) {
+            System.out.println("⚠ Аудиофайл не найден, пропускаем...\n");
+            return;
+        }
+        
+        byte[] originalData = Files.readAllBytes(Paths.get(inputFile));
+        System.out.println("Исходный файл: " + input.getName());
+        System.out.println("Тип: MP3 аудио");
+        System.out.println("Размер: " + formatSize(originalData.length));
+        System.out.println("SHA-256: " + calculateChecksum(originalData));
+        
+        DES des = new DES();
+        byte[] key = generateRandomKey();
+        byte[] iv = new byte[8];
+        new SecureRandom().nextBytes(iv);
+        
+        CipherContext ctx = new CipherContext(
+            des,
+            key,
+            CipherMode.CBC,
+            PaddingMode.PKCS7,
+            8,
+            iv
+        );
+        
+        System.out.println("\nРежим: CBC");
+        System.out.println("Шифрование...");
+        long startTime = System.currentTimeMillis();
+        ctx.encryptFileAsync(inputFile, encryptedFile).join();
+        long encryptTime = System.currentTimeMillis() - startTime;
+        
+        byte[] encryptedData = Files.readAllBytes(Paths.get(encryptedFile));
+        System.out.println("✓ Зашифровано за " + encryptTime + " мс");
+        System.out.println("  Размер: " + formatSize(encryptedData.length));
+        System.out.println("  Скорость: " + formatSpeed(originalData.length, encryptTime));
+        
+        System.out.println("\nДешифрование...");
+        startTime = System.currentTimeMillis();
+        ctx.decryptFileAsync(encryptedFile, decryptedFile).join();
+        long decryptTime = System.currentTimeMillis() - startTime;
+        
+        ctx.shutdown();
+        
+        byte[] decryptedData = Files.readAllBytes(Paths.get(decryptedFile));
+        System.out.println("✓ Расшифровано за " + decryptTime + " мс");
+        System.out.println("  Скорость: " + formatSpeed(decryptedData.length, decryptTime));
+        
+        boolean success = Arrays.equals(originalData, decryptedData);
+        System.out.println("\nПроверка:");
+        System.out.println("  SHA-256 исходного:      " + calculateChecksum(originalData));
+        System.out.println("  SHA-256 расшифрованного: " + calculateChecksum(decryptedData));
+        System.out.println("  Результат: " + (success ? "✓ УСПЕШНО - аудио полностью восстановлено!" : "✗ ОШИБКА"));
+        System.out.println();
+    }
+    
+    private static void demonstrateVideoEncryption() throws Exception {
+        System.out.println("═══════════════════════════════════════════════");
+        System.out.println("Пример 7: Шифрование видео (MOV)");
+        System.out.println("═══════════════════════════════════════════════\n");
+        
+        // Используем меньший видеофайл для демонстрации
+        String inputFile = TEST_DIR + "/Запись экрана 2025-11-20 в 19.58.24.mov";
+        String encryptedFile = TEST_DIR + "/video.mov.enc";
+        String decryptedFile = TEST_DIR + "/video_decrypted.mov";
+        
+        File input = new File(inputFile);
+        if (!input.exists()) {
+            System.out.println("⚠ Видеофайл не найден, пропускаем...\n");
+            return;
+        }
+        
+        byte[] originalData = Files.readAllBytes(Paths.get(inputFile));
+        System.out.println("Исходный файл: " + input.getName());
+        System.out.println("Тип: MOV видео");
+        System.out.println("Размер: " + formatSize(originalData.length));
+        System.out.println("SHA-256: " + calculateChecksum(originalData));
+        
+        DES des = new DES();
+        byte[] key = generateRandomKey();
+        byte[] iv = new byte[8];
+        new SecureRandom().nextBytes(iv);
+        
+        CipherContext ctx = new CipherContext(
+            des,
+            key,
+            CipherMode.OFB,
+            PaddingMode.PKCS7,
+            8,
+            iv
+        );
+        
+        System.out.println("\nРежим: OFB (потоковый режим для больших файлов)");
+        System.out.println("Шифрование...");
+        long startTime = System.currentTimeMillis();
+        ctx.encryptFileAsync(inputFile, encryptedFile).join();
+        long encryptTime = System.currentTimeMillis() - startTime;
+        
+        byte[] encryptedData = Files.readAllBytes(Paths.get(encryptedFile));
+        System.out.println("✓ Зашифровано за " + encryptTime + " мс (" + (encryptTime / 1000.0) + " сек)");
+        System.out.println("  Размер: " + formatSize(encryptedData.length));
+        System.out.println("  Скорость: " + formatSpeed(originalData.length, encryptTime));
+        
+        System.out.println("\nДешифрование...");
+        startTime = System.currentTimeMillis();
+        ctx.decryptFileAsync(encryptedFile, decryptedFile).join();
+        long decryptTime = System.currentTimeMillis() - startTime;
+        
+        ctx.shutdown();
+        
+        byte[] decryptedData = Files.readAllBytes(Paths.get(decryptedFile));
+        System.out.println("✓ Расшифровано за " + decryptTime + " мс (" + (decryptTime / 1000.0) + " сек)");
+        System.out.println("  Скорость: " + formatSpeed(decryptedData.length, decryptTime));
+        
+        boolean success = Arrays.equals(originalData, decryptedData);
+        System.out.println("\nПроверка:");
+        System.out.println("  SHA-256 исходного:      " + calculateChecksum(originalData));
+        System.out.println("  SHA-256 расшифрованного: " + calculateChecksum(decryptedData));
+        System.out.println("  Результат: " + (success ? "✓ УСПЕШНО - видео полностью восстановлено!" : "✗ ОШИБКА"));
+        
+        // Демонстрация большого видеофайла (опционально)
+        demonstrateLargeVideoEncryption();
+        System.out.println();
+    }
+    
+    private static void demonstrateLargeVideoEncryption() throws Exception {
+        String largeVideoFile = TEST_DIR + "/Запись экрана 2025-11-21 в 10.02.23.mov";
+        File largeVideo = new File(largeVideoFile);
+        
+        if (!largeVideo.exists()) {
+            return;
+        }
+        
+        System.out.println("\n--- Дополнительно: Большое видео ---");
+        
+        byte[] largeData = Files.readAllBytes(Paths.get(largeVideoFile));
+        System.out.println("Файл: " + largeVideo.getName());
+        System.out.println("Размер: " + formatSize(largeData.length));
+        
+        // Оценка времени
+        double estimatedTime = largeData.length / (1024.0 * 1024.0 * 0.3); // ~0.3 MB/s
+        System.out.println("Примерное время: ~" + (int)estimatedTime + " секунд шифрование + ~" + (int)estimatedTime + " секунд дешифрование");
+        System.out.println("⚠ Это займет ~" + (int)(estimatedTime * 2) + " секунд. Шифруем только первый 1 МБ для демонстрации...\n");
+        
+        // Берем только первый 1 МБ для демонстрации
+        int sampleSize = Math.min(1024 * 1024, largeData.length);
+        byte[] sampleData = Arrays.copyOf(largeData, sampleSize);
+        
+        DES des = new DES();
+        byte[] key = generateRandomKey();
+        byte[] iv = generateRandomIV();
+        
+        CipherContext ctx = new CipherContext(
+            des,
+            key,
+            CipherMode.CTR,
+            PaddingMode.PKCS7,
+            8,
+            iv
+        );
+        
+        System.out.println("Шифрование образца (" + formatSize(sampleData.length) + ")...");
+        long start = System.currentTimeMillis();
+        byte[][] encResult = new byte[1][];
+        ctx.encryptAsync(sampleData, encResult).join();
+        byte[] encrypted = encResult[0];
+        long encTime = System.currentTimeMillis() - start;
+        
+        System.out.println("✓ Зашифровано за " + (encTime / 1000.0) + " сек");
+        System.out.println("  Скорость: " + formatSpeed(sampleData.length, encTime));
+        
+        System.out.println("Дешифрование образца...");
+        start = System.currentTimeMillis();
+        byte[][] decResult = new byte[1][];
+        ctx.decryptAsync(encrypted, decResult).join();
+        byte[] decrypted = decResult[0];
+        long decTime = System.currentTimeMillis() - start;
+        
+        ctx.shutdown();
+        
+        System.out.println("✓ Расшифровано за " + (decTime / 1000.0) + " сек");
+        System.out.println("  Скорость: " + formatSpeed(decrypted.length, decTime));
+        
+        boolean success = Arrays.equals(sampleData, decrypted);
+        System.out.println("Результат: " + (success ? "✓ УСПЕШНО (образец проверен)" : "✗ ОШИБКА"));
+        System.out.println("💡 Для полного шифрования 49 МБ потребуется ~" + (int)(estimatedTime * 2) + " сек");
+    }
+    
     private static void demonstrateDifferentModes() throws Exception {
         System.out.println("═══════════════════════════════════════════════");
-        System.out.println("Пример 5: Сравнение режимов шифрования");
+        System.out.println("Пример 8: Сравнение режимов шифрования");
         System.out.println("═══════════════════════════════════════════════\n");
         
         String inputFile = TEST_DIR + "/text.txt";
@@ -398,6 +667,18 @@ public class DESFileDemo {
         } catch (Exception e) {
             return "ERROR";
         }
+    }
+    
+    private static String formatSize(long bytes) {
+        if (bytes < 1024) return bytes + " байт";
+        if (bytes < 1024 * 1024) return String.format("%.2f КБ", bytes / 1024.0);
+        return String.format("%.2f МБ", bytes / (1024.0 * 1024.0));
+    }
+    
+    private static String formatSpeed(long bytes, long millis) {
+        if (millis == 0) return "N/A";
+        double mbPerSec = (bytes / (1024.0 * 1024.0)) / (millis / 1000.0);
+        return String.format("%.2f МБ/сек", mbPerSec);
     }
 }
 

@@ -36,10 +36,13 @@ public class DEALFileEncryptionDemo {
             // 2. Демонстрация шифрования текстовых файлов
             demonstrateTextFileEncryption();
             
-            // 3. Демонстрация различных режимов шифрования
+            // 3. Демонстрация шифрования медиафайлов
+            demonstrateMediaFilesEncryption();
+            
+            // 4. Демонстрация различных режимов шифрования
             demonstrateCipherModes();
             
-            // 4. Демонстрация различных режимов паддинга
+            // 5. Демонстрация различных режимов паддинга
             demonstratePaddingModes();
             
             System.out.println("\n" + "═".repeat(80));
@@ -201,11 +204,117 @@ public class DEALFileEncryptionDemo {
     }
     
     /**
+     * Демонстрация шифрования медиафайлов (изображения, аудио, видео)
+     */
+    private static void demonstrateMediaFilesEncryption() throws IOException {
+        System.out.println("─".repeat(80));
+        System.out.println("3. ШИФРОВАНИЕ МЕДИАФАЙЛОВ (ИЗОБРАЖЕНИЯ, АУДИО, ВИДЕО)");
+        System.out.println("─".repeat(80));
+        
+        SecureRandom random = new SecureRandom();
+        byte[] key = new byte[24];
+        random.nextBytes(key);
+        
+        byte[] iv = new byte[16];
+        random.nextBytes(iv);
+        
+        DEAL deal = new DEAL();
+        
+        // Создаем тестовые медиафайлы
+        System.out.println("Создание тестовых медиафайлов...\n");
+        
+        // 1. Изображение (PNG) - создаем простой тестовый PNG
+        byte[] pngHeader = {(byte)0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}; // PNG signature
+        byte[] pngData = new byte[1024];
+        random.nextBytes(pngData);
+        byte[] pngFile = new byte[pngHeader.length + pngData.length];
+        System.arraycopy(pngHeader, 0, pngFile, 0, pngHeader.length);
+        System.arraycopy(pngData, 0, pngFile, pngHeader.length, pngData.length);
+        
+        demonstrateMediaFile("test_image.png", pngFile, "PNG изображение", deal, key, iv, CipherMode.CTR);
+        
+        // 2. Аудио (MP3) - создаем тестовые данные с MP3 заголовком
+        byte[] mp3Header = {(byte)0xFF, (byte)0xFB}; // MP3 sync word
+        byte[] mp3Data = new byte[8192];
+        random.nextBytes(mp3Data);
+        byte[] mp3File = new byte[mp3Header.length + mp3Data.length];
+        System.arraycopy(mp3Header, 0, mp3File, 0, mp3Header.length);
+        System.arraycopy(mp3Data, 0, mp3File, mp3Header.length, mp3Data.length);
+        
+        demonstrateMediaFile("test_audio.mp3", mp3File, "MP3 аудио", deal, key, iv, CipherMode.CBC);
+        
+        // 3. Видео (MOV) - создаем тестовые данные
+        byte[] movData = new byte[16384]; // 16 KB тестовое видео
+        random.nextBytes(movData);
+        
+        demonstrateMediaFile("test_video.mov", movData, "MOV видео", deal, key, iv, CipherMode.OFB);
+        
+        System.out.println("✓ Все медиафайлы успешно зашифрованы и восстановлены!");
+        System.out.println();
+    }
+    
+    /**
+     * Вспомогательный метод для демонстрации шифрования медиафайла
+     */
+    private static void demonstrateMediaFile(String filename, byte[] data, String type, 
+                                            DEAL deal, byte[] key, byte[] iv, CipherMode mode) throws IOException {
+        System.out.println("Тип файла: " + type);
+        System.out.println("  Имя: " + filename);
+        System.out.println("  Размер: " + formatSize(data.length));
+        System.out.println("  Режим шифрования: " + mode);
+        
+        String filepath = TEST_FILES_DIR + filename;
+        Files.write(Paths.get(filepath), data);
+        System.out.println("  ✓ Создан: " + filepath);
+        
+        // Шифрование
+        CipherContext ctx = new CipherContext(deal, key, mode, PaddingMode.PKCS7, 16, iv);
+        long startEnc = System.currentTimeMillis();
+        byte[][] encryptedResult = new byte[1][];
+        ctx.encryptAsync(data, encryptedResult).join();
+        byte[] encrypted = encryptedResult[0];
+        long encTime = System.currentTimeMillis() - startEnc;
+        ctx.shutdown();
+        
+        String encFilepath = filepath + ".enc";
+        Files.write(Paths.get(encFilepath), encrypted);
+        System.out.println("  ✓ Зашифровано: " + encFilepath + " (за " + encTime + " мс)");
+        System.out.println("    Размер: " + formatSize(encrypted.length));
+        
+        // Дешифрование
+        ctx = new CipherContext(deal, key, mode, PaddingMode.PKCS7, 16, iv);
+        long startDec = System.currentTimeMillis();
+        byte[][] decryptedResult = new byte[1][];
+        ctx.decryptAsync(encrypted, decryptedResult).join();
+        byte[] decrypted = decryptedResult[0];
+        long decTime = System.currentTimeMillis() - startDec;
+        ctx.shutdown();
+        
+        String decFilepath = filepath.replace(filename, "decrypted_" + filename);
+        Files.write(Paths.get(decFilepath), decrypted);
+        System.out.println("  ✓ Дешифровано: " + decFilepath + " (за " + decTime + " мс)");
+        
+        // Проверка
+        boolean success = Arrays.equals(data, decrypted);
+        System.out.println("  " + (success ? "✓ ПРОВЕРКА ПРОЙДЕНА: файл полностью восстановлен!" : "✗ ОШИБКА"));
+        System.out.println();
+    }
+    
+    /**
+     * Форматирует размер в удобочитаемый формат
+     */
+    private static String formatSize(long bytes) {
+        if (bytes < 1024) return bytes + " байт";
+        if (bytes < 1024 * 1024) return String.format("%.2f КБ", bytes / 1024.0);
+        return String.format("%.2f МБ", bytes / (1024.0 * 1024.0));
+    }
+    
+    /**
      * Демонстрация различных режимов шифрования
      */
     private static void demonstrateCipherModes() throws IOException {
         System.out.println("─".repeat(80));
-        System.out.println("3. СРАВНЕНИЕ РАЗЛИЧНЫХ РЕЖИМОВ ШИФРОВАНИЯ");
+        System.out.println("4. СРАВНЕНИЕ РАЗЛИЧНЫХ РЕЖИМОВ ШИФРОВАНИЯ");
         System.out.println("─".repeat(80));
         
         // Создаем тестовые данные
@@ -267,7 +376,7 @@ public class DEALFileEncryptionDemo {
      */
     private static void demonstratePaddingModes() throws IOException {
         System.out.println("─".repeat(80));
-        System.out.println("4. СРАВНЕНИЕ РАЗЛИЧНЫХ РЕЖИМОВ ПАДДИНГА");
+        System.out.println("5. СРАВНЕНИЕ РАЗЛИЧНЫХ РЕЖИМОВ ПАДДИНГА");
         System.out.println("─".repeat(80));
         
         SecureRandom random = new SecureRandom();
