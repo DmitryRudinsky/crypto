@@ -1,0 +1,1 @@
+This is a test text file for encryption demo. It contains some sample text to demonstrate the encryption and decryption capabilities.
